@@ -114,13 +114,14 @@ def find_pair(tree):
         px = tree.lep_pt * np.cos(tree.lep_phi)
         py = tree.lep_pt * np.sin(tree.lep_phi)
         pz = tree.lep_pt * np.sinh(tree.lep_eta)
-
+        
+        # all pairs to check 
         checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
-        rangej = [0,1,2,3]
 
         for i,j in checkpair: 
             print(i,j)
-
+            
+            # for lepton pair charge is opposite
             if tree.lep_charge[i] == - tree.lep_charge[j]:
                 m2l = ((E[i] + E[j]) ** 2 - ((px[i] + px[j]) ** 2 + (py[i] + py[j]) ** 2 + (pz[i] + pz[j]) ** 2)) ** 0.5
                 
