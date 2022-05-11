@@ -29,7 +29,7 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
     canvas = ROOT.TCanvas("canvas","plot a variable",800,600)
     canvas.cd()
 
-    hist = ROOT.TH1F("tryout","tryout plot m4l",30,50000,150000)
+    hist = ROOT.TH1F("tryout","tryout plot m4l",10,50000,150000)
 
     all_m4l = []
 
@@ -51,7 +51,9 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
 
         # filling histogram with weighted data
         if scaling == True:
-            finalmcWeight = tree.XSection * 1000 * lumi_data * tree.mcWeight * 1/number_entries
+
+            #finalmcWeight = tree.XSection * 1000 * lumi_data * tree.mcWeight * 1/number_entries
+            finalmcWeight = tree.XSection * 1000 * lumi_data * tree.mcWeight * 1/tree.SumWeights
             hist.Fill(m4l, finalmcWeight)
 
     print "Histogram is filled"
@@ -65,20 +67,16 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
     # Draw the canvas, which contains the histogram
     canvas.Update()
 
-    # The following lines allow the canvas to be displayed, 
-    # until you press enter in the command line.
-    try:
-        __IPYTHON__
-    except:
-        raw_input('Press Enter to exit')
-
     # Next we can also normalise the histogram (so the integral is 1), to allow us to see the proportions. 
     # By doing this, you can directly read of the y-axis what fraction of events fall into each bin. 
     if scaling == False:
         scale = hist.Integral()
 
     if scaling == True:
-        scale = tree.SumWeights
+        scale = 1
+        #scale = tree.SumWeights
+        #print('sum of weights = {}'.format(scale))
+        #print('integral = {}'.format(hist.Integral()))
 
     hist.Scale(1/scale)
 
@@ -97,7 +95,6 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
         canvas.Print("my_hist_m4l.jpg")
     
     if scaling == True:
-        print('here')
         canvas.Print("my_hist_m4l_scaled.jpg")
 
     try:
@@ -109,27 +106,28 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
 
 
 def find_pair(tree):
+    checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
+    m2l = []
+
     for event in tree:
         E = tree.lep_E
         px = tree.lep_pt * np.cos(tree.lep_phi)
         py = tree.lep_pt * np.sin(tree.lep_phi)
         pz = tree.lep_pt * np.sinh(tree.lep_eta)
-        
-        # all pairs to check 
-        checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
 
         for i,j in checkpair: 
             print(i,j)
-            
-            # for lepton pair charge is opposite
-            if tree.lep_charge[i] == - tree.lep_charge[j]:
+
+            if tree.lep_charge[i] == - tree.lep_charge[j] and tree.lep_type[i] == tree.lep_type[j]:
+                print('pair found')
                 m2l = ((E[i] + E[j]) ** 2 - ((px[i] + px[j]) ** 2 + (py[i] + py[j]) ** 2 + (pz[i] + pz[j]) ** 2)) ** 0.5
-                
+                m2l_total.append(m2l)
                 print(m2l)
+                print(tree.lep_type[i], tree.lep_type[j])
                 print(tree.lep_charge[i], tree.lep_charge[j])
 
 
 
-find_pair(tree)
+#find_pair(tree)
 
-#plot_m4l(tree, lumi_data, number_entries, scaling=True)
+plot_m4l(tree, lumi_data, number_entries, scaling=True)
