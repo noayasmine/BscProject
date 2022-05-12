@@ -105,7 +105,7 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
 def find_pair(tree):
     checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
     m2l_total = []
-    mass_Z = 21000 # MeV
+    mass_Z = 91000 # MeV
 
     for event in tree:
         print('start event')
