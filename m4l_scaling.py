@@ -29,7 +29,7 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
     canvas = ROOT.TCanvas("canvas","plot a variable",800,600)
     canvas.cd()
 
-    hist = ROOT.TH1F("tryout","tryout plot m4l",10,50000,150000)
+    hist = ROOT.TH1F("tryout","tryout plot m4l",25,50000,150000)
 
     all_m4l = []
 
@@ -73,10 +73,7 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
         scale = hist.Integral()
 
     if scaling == True:
-        scale = 1
-        #scale = tree.SumWeights
-        #print('sum of weights = {}'.format(scale))
-        #print('integral = {}'.format(hist.Integral()))
+        scale = hist.Integral()
 
     hist.Scale(1/scale)
 
@@ -107,27 +104,48 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
 
 def find_pair(tree):
     checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
-    m2l = []
+    m2l_total = []
+    mass_Z = 21000 # MeV
 
     for event in tree:
+        print('start event')
         E = tree.lep_E
         px = tree.lep_pt * np.cos(tree.lep_phi)
         py = tree.lep_pt * np.sin(tree.lep_phi)
         pz = tree.lep_pt * np.sinh(tree.lep_eta)
+        m2ls_per_event = []
+        pairs_found = []
 
+        # find pairs based on charge and lepton type
         for i,j in checkpair: 
-            print(i,j)
-
             if tree.lep_charge[i] == - tree.lep_charge[j] and tree.lep_type[i] == tree.lep_type[j]:
-                print('pair found')
+                pairs_found.append([i,j])
                 m2l = ((E[i] + E[j]) ** 2 - ((px[i] + px[j]) ** 2 + (py[i] + py[j]) ** 2 + (pz[i] + pz[j]) ** 2)) ** 0.5
                 m2l_total.append(m2l)
-                print(m2l)
-                print(tree.lep_type[i], tree.lep_type[j])
-                print(tree.lep_charge[i], tree.lep_charge[j])
+                m2ls_per_event.append(m2l)
+        
+        other_pair = [0,1,2,3]
+        # filter based on m4l closest to m(Z-boson) in the case 4l = 4e or 4l = 4muon
+        if len(pairs_found) >= 3:
+            smallest = 100000
+            pair = []
+
+            for i in range(len(pairs_found)):
+                abs_diff = np.abs(mass_Z - m2ls_per_event[i])
+                #print(abs_diff)
+
+                if abs_diff < smallest:
+                    pair = pairs_found[i]
+                    
+            other_pair.remove(pair[0])
+            other_pair.remove(pair[1])
+
+            pairs_found = [pair, other_pair]
 
 
+        #print(pairs_found)
 
-#find_pair(tree)
 
-plot_m4l(tree, lumi_data, number_entries, scaling=True)
+find_pair(tree)
+
+#plot_m4l(tree, lumi_data, number_entries, scaling=True)
