@@ -1,5 +1,8 @@
 import ROOT
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 # opening root file
 f = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/MC/mc_345060.ggH125_ZZ4lep.4lep.root")
@@ -103,12 +106,20 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
 
 
 def find_pair(tree):
+    """ Function that looks for lepton pairs in the 2Z -> 4l process
+
+    Input: ROOT tree
+    Output: list with m2l of lepton pairs
+
+    Comment: In the data there are some cases which do not make sense (for example 3x positive charge).
+    These cases are not taken into account and their masses are not added to the m2l list.
+
+    """
     checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
     m2l_total = []
     mass_Z = 91000 # MeV
 
     for event in tree:
-        print('start event')
         E = tree.lep_E
         px = tree.lep_pt * np.cos(tree.lep_phi)
         py = tree.lep_pt * np.sin(tree.lep_phi)
@@ -121,7 +132,6 @@ def find_pair(tree):
             if tree.lep_charge[i] == - tree.lep_charge[j] and tree.lep_type[i] == tree.lep_type[j]:
                 pairs_found.append([i,j])
                 m2l = ((E[i] + E[j]) ** 2 - ((px[i] + px[j]) ** 2 + (py[i] + py[j]) ** 2 + (pz[i] + pz[j]) ** 2)) ** 0.5
-                m2l_total.append(m2l)
                 m2ls_per_event.append(m2l)
         
         other_pair = [0,1,2,3]
@@ -129,23 +139,40 @@ def find_pair(tree):
         if len(pairs_found) >= 3:
             smallest = 100000
             pair = []
+            m2l = 0
 
             for i in range(len(pairs_found)):
                 abs_diff = np.abs(mass_Z - m2ls_per_event[i])
-                #print(abs_diff)
 
                 if abs_diff < smallest:
                     pair = pairs_found[i]
-                    
+                    m2l = m2ls_per_event[i]
+            
             other_pair.remove(pair[0])
             other_pair.remove(pair[1])
 
-            pairs_found = [pair, other_pair]
+            if other_pair in pairs_found:
+                index = pairs_found.index(other_pair)
+
+                pairs_found = [pair, other_pair]
+                m2l_total.append(m2l)
+                m2l_total.append(m2ls_per_event[index])
 
 
-        #print(pairs_found)
+        if len(m2ls_per_event) == 2:
+            m2l_total.append(m2ls_per_event[0])
+            m2l_total.append(m2ls_per_event[1])
+
+    return m2l_total
 
 
-find_pair(tree)
+m2ls = np.array(find_pair(tree))
+print(m2ls)
+print(len(m2ls))
+print('mean = {} +- {}'.format(np.mean(m2ls), np.std(m2ls)))
+num_bins = 10
+n, bins, patches = plt.hist(m2ls, num_bins, facecolor='blue', alpha=0.5)
+plt.show()
+
 
 #plot_m4l(tree, lumi_data, number_entries, scaling=True)
