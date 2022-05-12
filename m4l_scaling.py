@@ -115,6 +115,10 @@ def find_pair(tree):
     These cases are not taken into account and their masses are not added to the m2l list.
 
     """
+    canvas = ROOT.TCanvas("canvas","plot a variable",800,600)
+    canvas.cd()
+    hist = ROOT.TH1F("m2l [MeV]","plot m2l",25,1000,100000)
+
     checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
     m2l_total = []
     mass_Z = 91000 # MeV
@@ -157,22 +161,42 @@ def find_pair(tree):
                 pairs_found = [pair, other_pair]
                 m2l_total.append(m2l)
                 m2l_total.append(m2ls_per_event[index])
+                hist.Fill(m2l)
+                hist.Fill(m2ls_per_event[index])
 
 
         if len(m2ls_per_event) == 2:
             m2l_total.append(m2ls_per_event[0])
             m2l_total.append(m2ls_per_event[1])
+            hist.Fill(m2ls_per_event[0])
+            hist.Fill(m2ls_per_event[1])
+
+    print "Histogram is filled"
+
+    # Now want to draw the histogram, and set the fill colour
+    hist.SetLineColor(ROOT.kBlack) 
+    hist.SetLineWidth(2) 
+    hist.SetFillColor(ROOT.kAzure)
+    hist.Draw("HIST")
+
+    # Draw the canvas, which contains the histogram
+    canvas.Update()
+
+    # Set some new colour settings for the histogram
+    hist.SetLineColor(ROOT.kBlack)
+    hist.SetLineWidth(2)          
+    hist.SetFillColor(ROOT.kViolet)
+
+    # Again we re-draw the histogram and canvas. 
+    hist.Draw("HIST")
+    canvas.Draw()
+
+    canvas.Print("my_hist_m2l.jpg")
 
     return m2l_total
 
 
 m2ls = np.array(find_pair(tree))
-print(m2ls)
-print(len(m2ls))
 print('mean = {} +- {}'.format(np.mean(m2ls), np.std(m2ls)))
-num_bins = 10
-n, bins, patches = plt.hist(m2ls, num_bins, facecolor='blue', alpha=0.5)
-plt.show()
-
 
 #plot_m4l(tree, lumi_data, number_entries, scaling=True)
