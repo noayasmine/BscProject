@@ -6,16 +6,27 @@ import matplotlib.pyplot as plt
 
 # opening root file
 f = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/MC/mc_345060.ggH125_ZZ4lep.4lep.root")
+bg_f = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/MC/mc_363490.llll.4lep.root ")
 
 # Here we define a tree named "tree" to extract the data from the input .root file.
-tree = f.Get("mini")
+tree_bg = bg_f.Get("mini")
+tree_H = f.Get("mini")
 lumi_data = 10 #fb ^-1
-number_entries = tree.GetEntries()
-print "Number of entries in the tree = ", number_entries
 
+def calc_m4l(lep_E, lep_phi, lep_eta, lep_pt):
+    E4l_squared = np.sum(lep_E) ** 2
+    px = lep_pt * np.cos(lep_phi)
+    py = lep_pt * np.sin(lep_phi)
+    pz = lep_pt * np.sinh(lep_eta)
 
-def plot_m4l(tree, lumi_data, number_entries, scaling=False):
-    """ Function to plot a histogram of invariant mass of Higgs boson via 4 lepton measurements (m4l)
+    p4l_squared = np.sum(px) ** 2 + np.sum(py) ** 2 + np.sum(pz) ** 2
+
+    return (E4l_squared - p4l_squared) ** 0.5
+
+def plot_m4l(tree_H, tree_bg, lumi_data, scaling=False):
+    """ 
+    Function to plot a histogram of invariant mass of Higgs boson via 4 lepton measurements (m4l)
+
     Input: 
         tree: tree object from ROOT file
         lumi_data: luminosity of the actual data [fb^-1]
@@ -32,32 +43,33 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
     canvas = ROOT.TCanvas("canvas","plot a variable",800,600)
     canvas.cd()
 
-    hist = ROOT.TH1F("tryout","tryout plot m4l",25,50000,150000)
+    hist = ROOT.TH1F("m4l Higgs","plot m4l Higgs",1000,50000,700000)
+    #hist_bg = ROOT.TH1F("m4l background","plot m4l background",25,50000,150000)
 
-    all_m4l = []
-
-    for event in tree:
-        E4l_squared = np.sum(tree.lep_E) ** 2
-        px = tree.lep_pt * np.cos(tree.lep_phi)
-        py = tree.lep_pt * np.sin(tree.lep_phi)
-        pz = tree.lep_pt * np.sinh(tree.lep_eta)
-
-        p4l_squared = np.sum(px) ** 2 + np.sum(py) ** 2 + np.sum(pz) ** 2
-
-        m4l = (E4l_squared - p4l_squared) ** 0.5
-
-        all_m4l.append(m4l)
+    for event in tree_H:
+        m4l_H = calc_m4l(tree_H.lep_E, tree_H.lep_phi, tree_H.lep_eta, tree_H.lep_pt)
 
         # filling histogram with unweighted data
         if scaling == False:
-            hist.Fill(m4l)
+            hist.Fill(m4l_H)
 
         # filling histogram with weighted data
         if scaling == True:
+            finalmcWeight = tree_H.XSection * 1000 * lumi_data * tree_H.mcWeight * 1/tree_H.SumWeights
+            hist.Fill(m4l_H, finalmcWeight)
 
-            #finalmcWeight = tree.XSection * 1000 * lumi_data * tree.mcWeight * 1/number_entries
-            finalmcWeight = tree.XSection * 1000 * lumi_data * tree.mcWeight * 1/tree.SumWeights
-            hist.Fill(m4l, finalmcWeight)
+    for event in tree_bg:
+        m4l_bg = calc_m4l(tree_bg.lep_E, tree_bg.lep_phi, tree_bg.lep_eta, tree_bg.lep_pt)
+
+        # filling histogram with unweighted data
+        if scaling == False:
+            #hist_bg.Fill(m4l_bg)
+            hits.Fill(m4l_bg)
+
+        # filling histogram with weighted data
+        if scaling == True:
+            finalmcWeight = tree_bg.XSection * 1000 * lumi_data * tree_bg.mcWeight * 1/tree_bg.SumWeights
+            hist.Fill(m4l_bg, finalmcWeight)
 
     print "Histogram is filled"
 
@@ -80,25 +92,26 @@ def plot_m4l(tree, lumi_data, number_entries, scaling=False):
 
     hist.Scale(1/scale)
 
-    print('The scale is {}'.format(scale))
-
     # Set some new colour settings for the histogram
     hist.SetLineColor(ROOT.kBlack)
     hist.SetLineWidth(2)          
     hist.SetFillColor(ROOT.kViolet)
+    hist.GetXaxis().SetTitle('m4l [MeV]')
+    hist.GetYaxis().SetTitle('events [normalised]')
 
     # Again we re-draw the histogram and canvas. 
     hist.Draw("HIST")
     canvas.Draw()
 
     if scaling == False:
-        canvas.Print("my_hist_m4l.jpg")
+        canvas.Print("hist_m4l.jpg")
     
     if scaling == True:
-        canvas.Print("my_hist_m4l_scaled.jpg")
+        canvas.Print("hist_m4l_scaled2.jpg")
 
     try:
         __IPYTHON__
+
     except:
         raw_input('Press Enter to exit')
 
@@ -115,9 +128,16 @@ def find_pair(tree):
     These cases are not taken into account and their masses are not added to the m2l list.
 
     """
+
     canvas = ROOT.TCanvas("canvas","plot a variable",800,600)
     canvas.cd()
-    hist = ROOT.TH1F("m2l [MeV]","plot m2l",25,1000,100000)
+    hist = ROOT.TH1F("m2l [MeV]","plot m2l",100,1000,100000)
+
+    canvas_2d = ROOT.TCanvas("canvas","plot a variable",800,600)
+    canvas_2d.cd()
+    hist_2d = ROOT.TH2F()
+
+    mee, mmumu = [],[]
 
     checkpair = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
     m2l_total = []
@@ -137,9 +157,17 @@ def find_pair(tree):
                 pairs_found.append([i,j])
                 m2l = ((E[i] + E[j]) ** 2 - ((px[i] + px[j]) ** 2 + (py[i] + py[j]) ** 2 + (pz[i] + pz[j]) ** 2)) ** 0.5
                 m2ls_per_event.append(m2l)
-        
+                print(tree.lep_type[i],tree.lep_type[j])
+
+                if tree.lep_type[i] == 11L:
+                    mee.append(m2l)
+
+                if tree.lep_type == 13L:
+                    mmumu.append(m2l)
+
+
         other_pair = [0,1,2,3]
-        # filter based on m4l closest to m(Z-boson) in the case 4l = 4e or 4l = 4muon
+        # filter based on m4l closest to m(Z-boson) in the case 4l = 4e or 4l = 4mu
         if len(pairs_found) >= 3:
             smallest = 100000
             pair = []
@@ -180,12 +208,12 @@ def find_pair(tree):
     hist.Draw("HIST")
 
     # Draw the canvas, which contains the histogram
-    canvas.Update()
+    #canvas.Update()
 
     # Set some new colour settings for the histogram
-    hist.SetLineColor(ROOT.kBlack)
-    hist.SetLineWidth(2)          
-    hist.SetFillColor(ROOT.kViolet)
+    #hist.SetLineColor(ROOT.kBlack)
+    #hist.SetLineWidth(2)          
+    #hist.SetFillColor(ROOT.kViolet)
 
     # Again we re-draw the histogram and canvas. 
     hist.Draw("HIST")
@@ -196,7 +224,7 @@ def find_pair(tree):
     return m2l_total
 
 
-m2ls = np.array(find_pair(tree))
-print('mean = {} +- {}'.format(np.mean(m2ls), np.std(m2ls)))
+#m2ls = np.array(find_pair(tree))
+#print('mean = {} +- {}'.format(np.mean(m2ls), np.std(m2ls)))
 
-#plot_m4l(tree, lumi_data, number_entries, scaling=True)
+plot_m4l(tree_H, tree_bg, lumi_data, scaling=True)
