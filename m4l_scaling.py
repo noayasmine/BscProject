@@ -33,11 +33,12 @@ def plot_m4l(tree, lumi_data, filename, histname, scaling=False):
     Input: 
         tree: tree object from ROOT file
         lumi_data: luminosity of the actual data [fb^-1]
-        number_entries: number of entries of the generated MC data
+        filename: name of root file (.root at the end)
+        histname: name of histogram in the root file
         scaling: set True for scaling and False for no scaling
 
     Output:
-        saved file named my_hist_m4l.jpg (no scaling) or my_hist_m4l_scaled.jpg (with scaling)
+        function generates histogram and saves it under filename
 
     """
 
