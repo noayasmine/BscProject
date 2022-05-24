@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 # opening root file
 f = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/MC/mc_345060.ggH125_ZZ4lep.4lep.root")
 bg_f = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/MC/mc_363490.llll.4lep.root ")
-#f_data = ROOT.TFile.Open("")
+f_dataA = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/Data/data_A.4lep.root")
 
 # Here we define a tree named "tree" to extract the data from the input .root file.
 tree_bg = bg_f.Get("mini")
 tree_H = f.Get("mini")
+tree_dataA = f_dataA.Get("mini")
 lumi_data = 10 #fb ^-1
 
 def calc_m4l(lep_E, lep_phi, lep_eta, lep_pt):
@@ -23,6 +24,7 @@ def calc_m4l(lep_E, lep_phi, lep_eta, lep_pt):
     p4l_squared = np.sum(px) ** 2 + np.sum(py) ** 2 + np.sum(pz) ** 2
 
     return (E4l_squared - p4l_squared) ** 0.5
+
 
 def plot_m4l(tree, lumi_data, filename, histname, scaling=False):
     """ 
@@ -46,10 +48,10 @@ def plot_m4l(tree, lumi_data, filename, histname, scaling=False):
 
     hist = ROOT.TH1F(histname,"plot m4l Higgs",1000,50000,700000)
 
-    #for event in tree:
-    number = 10
-    for i in range(number):
-        tree.GetEntry(i)
+    #number = 10
+    #for i in range(number):
+    for event in tree:
+        #tree.GetEntry(i)
         m4l = calc_m4l(tree.lep_E, tree.lep_phi, tree.lep_eta, tree.lep_pt)
 
         # filling histogram with unweighted data
@@ -63,46 +65,15 @@ def plot_m4l(tree, lumi_data, filename, histname, scaling=False):
 
     print "Histogram is filled"
 
-    # Now want to draw the histogram, and set the fill colour
-    #hist.SetLineColor(ROOT.kBlack) 
-    #hist.SetLineWidth(2) 
-    #hist.SetFillColor(ROOT.kAzure)
-    #hist.Draw("HIST")
-
-    # Draw the canvas, which contains the histogram
-    #canvas.Update()
-
     # Next we can also normalise the histogram (so the integral is 1), to allow us to see the proportions. 
     # By doing this, you can directly read of the y-axis what fraction of events fall into each bin. 
-    if scaling == False:
-        scale = hist.Integral()
-
-    if scaling == True:
-        scale = hist.Integral()
+    scale = hist.Integral()
 
     hist.Scale(1/scale)
-
-    # Set some new colour settings for the histogram
-    #hist.SetLineColor(ROOT.kBlack)
-    #hist.SetLineWidth(2)          
-    #hist.SetFillColor(ROOT.kViolet)
-    #hist.GetXaxis().SetTitle('m4l [MeV]')
-    #hist.GetYaxis().SetTitle('events [normalised]')
-
-    # Again we re-draw the histogram and canvas. 
-    #hist.Draw("HIST")
-    #canvas.Draw()
-
-    #if scaling == False:
-    #    canvas.Print("hist_m4l.jpg")
-    
-    #if scaling == True:
-    #    canvas.Print("hist_m4l_scaled.jpg")
 
     f = ROOT.TFile.Open(filename, "RECREATE")
     f.cd()
     hist.Write()
-
 
 
 def find_pair(tree):
@@ -213,3 +184,4 @@ def find_pair(tree):
 
 plot_m4l(tree_H, lumi_data, 'higgs.root', 'higgs_hist', scaling=True)
 plot_m4l(tree_bg, lumi_data, 'background.root', 'bg_hist', scaling=True)
+plot_m4l(tree_dataA, lumi_data, 'data_A.root', 'dataA_hist', scaling=False)
