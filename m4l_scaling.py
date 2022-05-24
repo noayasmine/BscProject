@@ -5,14 +5,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # opening root file
-f = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/MC/mc_345060.ggH125_ZZ4lep.4lep.root")
-bg_f = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/MC/mc_363490.llll.4lep.root ")
-f_dataA = ROOT.TFile.Open("/data/atlas/users/mvozak/opendata/4lep/Data/data_A.4lep.root")
 
-# Here we define a tree named "tree" to extract the data from the input .root file.
-tree_bg = bg_f.Get("mini")
-tree_H = f.Get("mini")
-tree_dataA = f_dataA.Get("mini")
+rootfiles = ["/data/atlas/users/mvozak/opendata/4lep/MC/mc_345060.ggH125_ZZ4lep.4lep.root", "/data/atlas/users/mvozak/opendata/4lep/MC/mc_363490.llll.4lep.root", \
+"/data/atlas/users/mvozak/opendata/4lep/Data/data_A.4lep.root"]
+
 lumi_data = 10 #fb ^-1
 
 def calc_m4l(lep_E, lep_phi, lep_eta, lep_pt):
@@ -49,14 +45,12 @@ def plot_m4l(tree, lumi_data, filename, histname, scaling=False):
 
     hist = ROOT.TH1F(histname,"plot m4l Higgs",1000,50000,700000)
 
-    #number = 10
-    #for i in range(number):
     for event in tree:
-        #tree.GetEntry(i)
         m4l = calc_m4l(tree.lep_E, tree.lep_phi, tree.lep_eta, tree.lep_pt)
-
+        #print(m4l)
         # filling histogram with unweighted data
         if scaling == False:
+            print(m4l)
             hist.Fill(m4l)
 
         # filling histogram with weighted data
@@ -70,7 +64,7 @@ def plot_m4l(tree, lumi_data, filename, histname, scaling=False):
     # By doing this, you can directly read of the y-axis what fraction of events fall into each bin. 
     scale = hist.Integral()
 
-    hist.Scale(1/scale)
+    #hist.Scale(1/scale)
 
     f = ROOT.TFile.Open(filename, "RECREATE")
     f.cd()
@@ -183,6 +177,16 @@ def find_pair(tree):
 #m2ls = np.array(find_pair(tree_H))
 #print('mean = {} +- {}'.format(np.mean(m2ls), np.std(m2ls)))
 
-plot_m4l(tree_H, lumi_data, 'higgs.root', 'higgs_hist', scaling=True)
-plot_m4l(tree_bg, lumi_data, 'background.root', 'bg_hist', scaling=True)
-plot_m4l(tree_dataA, lumi_data, 'data_A.root', 'dataA_hist', scaling=False)
+filenames = ['higgs.root', 'background.root', 'data_A.root']
+histnames = ['higgs_hist', 'bg_hist', 'dataA_hist']
+scaling = [True, True, False]
+i = 0
+
+for rootfilename in rootfiles:
+    f = ROOT.TFile.Open(rootfilename)
+    tree = f.Get("mini")
+    plot_m4l(tree, lumi_data, filenames[i], histnames[i], scaling=scaling[i])
+
+    i += 1
+
+
