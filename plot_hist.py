@@ -13,7 +13,7 @@ f_dataA = ROOT.TFile("data_A.root", "READ")
 
 hist_higgs = f_higgs.Get("higgs_hist")
 hist_bg = f_bg.Get("bg_hist")
-#hist = f_bg.Get("dataA_hist")
+hist_data = f_bg.Get("dataA_hist")
 #hist.ClassName()
 
 hist_higgs.SetLineColor(ROOT.kBlack)
@@ -23,6 +23,7 @@ hist_higgs.GetXaxis().SetTitle('m4l [MeV]')
 hist_higgs.GetYaxis().SetTitle('events [normalised]')
 hist_higgs.Draw("HIST")
 hist_bg.Draw("same HIST")
+hist_data.Draw("same HIST")
 canvas.Draw()
 
 canvas.Print("histogram_m4l_new3.jpg")
