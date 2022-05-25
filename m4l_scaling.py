@@ -4,11 +4,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# opening root file
-
-rootfiles = ["/data/atlas/users/mvozak/opendata/4lep/MC/mc_345060.ggH125_ZZ4lep.4lep.root", "/data/atlas/users/mvozak/opendata/4lep/MC/mc_363490.llll.4lep.root", \
-"/data/atlas/users/mvozak/opendata/4lep/Data/data_A.4lep.root"]
-
 lumi_data = 10 #fb ^-1
 
 def calc_m4l(lep_E, lep_phi, lep_eta, lep_pt):
@@ -68,7 +63,11 @@ def plot_m4l(tree, lumi_data, filename, histname, scaling=False):
 
     f = ROOT.TFile.Open(filename, "RECREATE")
     f.cd()
+    
     hist.Write()
+    f.ls()
+    f.Close()
+    #print()
 
 
 def find_pair(tree):
@@ -177,16 +176,23 @@ def find_pair(tree):
 #m2ls = np.array(find_pair(tree_H))
 #print('mean = {} +- {}'.format(np.mean(m2ls), np.std(m2ls)))
 
-filenames = ['higgs.root', 'background.root', 'data_A.root']
-histnames = ['higgs_hist', 'bg_hist', 'dataA_hist']
-scaling = [True, True, False]
+rootfiles = ["/data/atlas/users/mvozak/opendata/4lep/MC/mc_345060.ggH125_ZZ4lep.4lep.root", "/data/atlas/users/mvozak/opendata/4lep/MC/mc_363490.llll.4lep.root", \
+"/data/atlas/users/mvozak/opendata/4lep/Data/data_A.4lep.root", "/data/atlas/users/mvozak/opendata/4lep/Data/data_B.4lep.root", \
+"/data/atlas/users/mvozak/opendata/4lep/Data/data_C.4lep.root", "/data/atlas/users/mvozak/opendata/4lep/Data/data_D.4lep.root"]
+
+filenames = ['higgs.root', 'background.root', 'data_A.root', 'data_B.root', 'data_C.root', 'data_D.root']
+histnames = ['higgs_hist', 'bg_hist', 'dataA_hist', 'dataB_hist', 'dataC_hist', 'dataD_hist']
+scaling = [True, True, False, False, False, False]
 i = 0
+lst = [2,3,4,5]
 
 for rootfilename in rootfiles:
     f = ROOT.TFile.Open(rootfilename)
     tree = f.Get("mini")
-    plot_m4l(tree, lumi_data, filenames[i], histnames[i], scaling=scaling[i])
+    if i in lst:
+        plot_m4l(tree, lumi_data, filenames[i], histnames[i], scaling=scaling[i])
 
     i += 1
+
 
 
