@@ -6,44 +6,42 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
-#MC_files = [ROOT.TFile("higgs.root", "READ"), ROOT.TFile("background.root", "READ")]
-f_higgs = ROOT.TFile("higgs.root", "READ")
-f_bg = ROOT.TFile("background.root", "READ")
-f_dataA = ROOT.TFile("data_A.root", "READ")
-f_dataB = ROOT.TFile("data_B.root", "READ")
+MC_files = [ROOT.TFile("higgs.root", "READ"), ROOT.TFile("background.root", "READ")]
+data_files = [ROOT.TFile("data_A.root", "READ"), ROOT.TFile("data_B.root", "READ"), ROOT.TFile("data_C.root", "READ"), ROOT.TFile("data_D.root", "READ")]
+histnames = ['higgs_hist', 'bg_hist', 'dataA_hist', 'dataB_hist', 'dataC_hist', 'dataD_hist']
 
-hist_higgs = f_higgs.Get("higgs_hist")
-hist_bg = f_bg.Get("bg_hist")
-hist_data = f_dataA.Get("dataA_hist")
-hist_dataB = f_dataB.Get("dataB_hist")
-#hist.ClassName()
+hists = []
+i = 0
+for file in MC_files:
+    hists.append(file.Get(histnames[i]))
+    i += 1
+
+for file in data_files:
+    hists.append(file.Get(histnames[i]))
+    i += 1
+
+for hist in hists:
+    hist.Rebin(50)
+    hist.SetLineColor(ROOT.kBlack)
+    hist.SetLineWidth(2)
+    hist.SetFillColor(ROOT.kViolet)
+
+hists[0].GetYaxis().SetTitle('events [normalised]')
+hists[0].GetXaxis().SetTitle('m4l [MeV]')
+
+MC_stack = ROOT.THStack("stacked", "stacked MC and data")
+for hist in hists[0:2]:
+    MC_stack.Add(hist)
+
+data_stack = ROOT.THStack("stacked data", "stacked data")
+for hist in hists[2:]:
+    data_stack.Add(hist)
 
 canvas = ROOT.TCanvas("canvas","plot a variable",800,600)
 canvas.cd()
 
-hist_higgs.SetLineColor(ROOT.kBlack)
-hist_higgs.SetLineWidth(2)       
-hist_higgs.Rebin(20) 
-hist_higgs.SetFillColor(ROOT.kViolet)
-hist_higgs.GetXaxis().SetTitle('m4l [MeV]')
-hist_higgs.GetYaxis().SetTitle('events [normalised]')
-#hist_higgs.Draw("HIST")
-
-hist_bg.Rebin(20)
-hist_bg.Draw("HIST")
-
-hist_data.Rebin(20)
-
-hist_higgs.Draw("SAME HIST")
-
-
-#stacked = ROOT.THStack('one', 'two')
-#stacked.Add(hist_higgs)
-#stacked.Add(hist_bg)
-#stacked.Draw("HIST")
-hist_data.Draw("SAME P*")
+MC_stack.Draw("HIST")
+data_stack.Draw("SAME P*")
 canvas.Draw()
 
 canvas.Print("histogram_m4l_stacked.jpg")
-
-
